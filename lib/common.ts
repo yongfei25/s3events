@@ -50,6 +50,21 @@ export function getSNS ():AWS.SNS {
   })
 }
 
+export function shouldPublishEvent (object:AWS.S3.Object, filterRules:AWS.S3.FilterRule[]) {
+  let valid = true
+  filterRules.forEach((rule) => {
+    if (rule.Name === 'prefix') {
+      valid = object.Key.startsWith(rule.Value)
+    } else{
+      valid = object.Key.endsWith(rule.Value)
+    }
+    if (!valid) {
+      return false
+    }
+  })
+  return valid
+}
+
 export async function forEachS3KeyInPrefix (s3:AWS.S3, bucket:string, prefix:string, func:S3KeyFunc):Promise<number> {
   let numObjects = 0
   let continuationToken:string|null = 'startToken'
