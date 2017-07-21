@@ -6,12 +6,29 @@ import * as fs from 'fs'
 import * as ini from 'ini'
 
 export interface S3Path {
-  bucket:string,
+  bucket:string
   key:string
 }
 
 export interface S3KeyFunc {
   (bucket:string, object:AWS.S3.Object):Promise<any>
+}
+
+export interface S3Event {
+  eventName:string
+  eventTime:string
+  eventSource:string
+  s3:{
+    bucket:{
+      name:string
+      arn:string
+    },
+    object:{
+      key:string
+      size:number
+      etag:string
+    }
+  }
 }
 
 export function parseS3Path (s3Path:string):S3Path {
@@ -63,6 +80,25 @@ export function shouldPublishEvent (object:AWS.S3.Object, filterRules:AWS.S3.Fil
     }
   })
   return valid
+}
+
+export function constructS3Event (bucket:string, object:AWS.S3.Object):S3Event {
+  return {
+    eventName: 'ObjectCreated:Put',
+    eventTime: (new Date()).toISOString(),
+    eventSource: 'aws:s3',
+    s3: {
+      bucket: {
+        name: bucket,
+        arn: ''
+      },
+      object: {
+        key: object.Key,
+        size: object.Size,
+        etag: object.ETag
+      }
+    }
+  }
 }
 
 export async function forEachS3KeyInPrefix (s3:AWS.S3, bucket:string, prefix:string, func:S3KeyFunc):Promise<number> {
