@@ -93,7 +93,7 @@ export function getLambda ():AWS.Lambda {
 export function constructS3Event (bucket:string, eventName:string, object:AWS.S3.Object):S3Event {
   return {
     eventVersion: "2.0",
-    eventName: eventName,
+    eventName: `s3:${eventName}`,
     eventTime: (new Date()).toISOString(),
     eventSource: 'aws:s3',
     s3: {
@@ -113,10 +113,10 @@ export function constructS3Event (bucket:string, eventName:string, object:AWS.S3
 export function printNotificationConfig(config:AWS.S3.NotificationConfiguration) {
   let filterRuleString = (filterRules:AWS.S3.FilterRule[]) => {
     return filterRules.reduce((prev, current) => {
-      return prev + ` ${current.Name}=${current.Value}` 
+      return prev + ` ${current.Name}=${current.Value}`
     }, '')
   }
-  
+
   if (config.TopicConfigurations.length > 0) {
     console.log('SNS:')
     config.TopicConfigurations.forEach((config) => {
