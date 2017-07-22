@@ -13,6 +13,12 @@ export interface SendSQSWithQueueConfigurationsParam {
   object:AWS.S3.Object
   queueConfigs:AWS.S3.QueueConfiguration[]
 }
+export interface InvokeLambdaWithConfigurationsParam {
+  bucket:string
+  eventName:string
+  object:AWS.S3.Object
+  lambdaConfigs:AWS.S3.LambdaFunctionConfiguration[]
+}
 export interface SendEventParam {
   bucket:string
   eventName:string
@@ -61,7 +67,6 @@ export async function sendSNSNotification (sns:AWS.SNS, topicArn:string, param:S
       Message: messageBody
     }).promise()
   }
-  return await Promise.resolve(true)
 }
 
 export async function sendSQSWithQueueConfigurations (sqs:AWS.SQS, param:SendSQSWithQueueConfigurationsParam) {
@@ -87,5 +92,24 @@ export async function sendSQSMessage (sqs:AWS.SQS, queueArn:string, param:SendEv
       MessageBody: messageBody
     }).promise()
   }
-  return await Promise.resolve(true)
+}
+
+export async function invokeLambdaWithConfigurations (lambda:AWS.Lambda, param:InvokeLambdaWithConfigurationsParam) {
+  let promises = param.lambdaConfigs.map((config) => {
+    return invokeLambda(lambda, config.LambdaFunctionArn, {
+      bucket: param.bucket,
+      eventName: param.eventName,
+      object: param.object,
+      filterRules: config.Filter.Key.FilterRules
+    })
+  })
+  return await Promise.all(promises)
+}
+
+export async function invokeLambda (lambda:AWS.Lambda, functionArn:string, param:SendEventParam) {
+  if (shouldSendEvent(param.object, param.filterRules)) {
+    const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
+    const messageBody = constructMessageBody(s3Event)
+    await lambda.invoke({ FunctionName: functionArn, InvocationType: 'Event' }).promise()
+  }
 }

@@ -33,6 +33,9 @@ export interface S3Event {
 }
 
 export function parseS3Path (s3Path:string):S3Path {
+  if (!s3Path.startsWith('s3://')) {
+    s3Path = 's3://' + s3Path
+  }
   let parsed = url.parse(s3Path)
   return {
     bucket: parsed.host,
@@ -72,6 +75,14 @@ export function getSQS ():AWS.SQS {
   const region = getRegionOrDefault('us-east-1')
   return new AWS.SQS({
     apiVersion: '2012-11-05',
+    region: region
+  })
+}
+
+export function getLambda ():AWS.Lambda {
+  const region = getRegionOrDefault('us-east-1')
+  return new AWS.Lambda({
+    apiVersion: '2015-03-31',
     region: region
   })
 }
