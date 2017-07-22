@@ -68,6 +68,14 @@ export function getSNS ():AWS.SNS {
   })
 }
 
+export function getSQS ():AWS.SQS {
+  const region = getRegionOrDefault('us-east-1')
+  return new AWS.SQS({
+    apiVersion: '2012-11-05',
+    region: region
+  })
+}
+
 export function constructS3Event (bucket:string, eventName:string, object:AWS.S3.Object):S3Event {
   return {
     eventVersion: "2.0",
@@ -85,6 +93,38 @@ export function constructS3Event (bucket:string, eventName:string, object:AWS.S3
         etag: object.ETag
       }
     }
+  }
+}
+
+export function printNotificationConfig(config:AWS.S3.NotificationConfiguration) {
+  let filterRuleString = (filterRules:AWS.S3.FilterRule[]) => {
+    return filterRules.reduce((prev, current) => {
+      return prev + ` ${current.Name}=${current.Value}` 
+    }, '')
+  }
+  
+  if (config.TopicConfigurations.length > 0) {
+    console.log('SNS:')
+    config.TopicConfigurations.forEach((config) => {
+      const filterRule = filterRuleString(config.Filter.Key.FilterRules)
+      console.log('-', config.TopicArn, filterRule)
+    })
+  }
+
+  if (config.QueueConfigurations.length > 0) {
+    console.log('SQS:')
+    config.QueueConfigurations.forEach((config) => {
+      const filterRule = filterRuleString(config.Filter.Key.FilterRules)
+      console.log('-', config.QueueArn, filterRule)
+    })
+  }
+
+  if (config.LambdaFunctionConfigurations.length > 0) {
+    console.log('Lambda:')
+    config.LambdaFunctionConfigurations.forEach((config) => {
+      const filterRule = filterRuleString(config.Filter.Key.FilterRules)
+      console.log('-', config.LambdaFunctionArn, filterRule)
+    })
   }
 }
 
