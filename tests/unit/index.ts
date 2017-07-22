@@ -37,15 +37,24 @@ let gzFileObject:AWS.S3.Object = {
 }
 
 before(async function () {
+  // Create topc
   let createTopic = await sns.createTopic({ Name: TEST_SNS_TOPIC }).promise()
   topicArn = createTopic.TopicArn
+  // Create queue
   let createQueue = await sqs.createQueue({ QueueName: TEST_SQS_QUEUE }).promise()
   queueUrl = createQueue.QueueUrl
   let parts = queueUrl.split('/')
   queueArn = ['arn', 'aws', 'sqs', REGION, parts[parts.length-2], parts[parts.length-1]].join(':')
-  await s3.createBucket({ Bucket: TEST_BUCKET }).promise()
-  await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.json', Body: '{ "json": true }' }).promise()
-  await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.gz', Body: '{ "json": false }' }).promise()
+  // Create subscription between SNS and SQS
+  let subscribe = await sns.subscribe({ TopicArn: topicArn, Protocol: 'sqs', Endpoint: queueArn }).promise()
+  // let subs = await sns.listSubscriptions().promise()
+  // console.log(subs)
+
+  // TODO: test s3 notification configuration but Localstack S3 notification didn't work out
+  // Revisit this if the issue is fixed in future.
+  // await s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+  // await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.json', Body: '{ "json": true }' }).promise()
+  // await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.gz', Body: '{ "json": false }' }).promise()
 })
 
 describe('sender', function () {
@@ -86,5 +95,21 @@ describe('sender', function () {
     })
     let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
     assert.equal(receiveMessage.Messages, undefined)
+  })
+  it('should publish SNS notification', async function () {
+    await sender.sendSNSNotification(sns, topicArn, {
+      bucket: TEST_BUCKET,
+      eventName: 'ObjectCreated:*',
+      object: jsonFileObject,
+      filterRules: [{ Name: 'Suffix', Value: 'json' }]
+    })
+    let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
+    assert(receiveMessage.Messages.length > 0)
+    let message = receiveMessage.Messages[0]
+    let snsMessage = JSON.parse(message.Body)
+    assert.equal(snsMessage.TopicArn, topicArn)
+    let s3Message = JSON.parse(snsMessage.Message)
+    assert.equal(s3Message.Records[0].s3.object.key, jsonFileObject.Key)
+    await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
 })
