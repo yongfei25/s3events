@@ -29,7 +29,7 @@ exports.handler = async function (argv) {
         console.log(`(dryrun) Invoke ${argv.functionArn} ${argv.event} for ${object.Key}`)
       } else {
         console.log(`Invoke ${argv.functionArn} ${argv.event} for ${object.Key}`)
-        await sender.invokeLambda(lambda, argv.functionArn, {
+        await sender.invokeLambda(lambda, argv.functionArn, 'Event', {
           bucket: s3Path.bucket,
           eventName: argv.event,
           object: object,

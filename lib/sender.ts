@@ -96,7 +96,7 @@ export async function sendSQSMessage (sqs:AWS.SQS, queueArn:string, param:SendEv
 
 export async function invokeLambdaWithConfigurations (lambda:AWS.Lambda, param:InvokeLambdaWithConfigurationsParam) {
   let promises = param.lambdaConfigs.map((config) => {
-    return invokeLambda(lambda, config.LambdaFunctionArn, {
+    return invokeLambda(lambda, config.LambdaFunctionArn, 'Event', {
       bucket: param.bucket,
       eventName: param.eventName,
       object: param.object,
@@ -106,10 +106,14 @@ export async function invokeLambdaWithConfigurations (lambda:AWS.Lambda, param:I
   return await Promise.all(promises)
 }
 
-export async function invokeLambda (lambda:AWS.Lambda, functionArn:string, param:SendEventParam) {
+export async function invokeLambda (lambda:AWS.Lambda, functionArn:string, type:string, param:SendEventParam) {
   if (shouldSendEvent(param.object, param.filterRules)) {
     const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
     const messageBody = constructMessageBody(s3Event)
-    await lambda.invoke({ FunctionName: functionArn, InvocationType: 'Event' }).promise()
+    return await lambda.invoke({
+      FunctionName: functionArn,
+      InvocationType: type,
+      Payload: messageBody
+    }).promise()
   }
 }

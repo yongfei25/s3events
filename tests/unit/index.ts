@@ -1,5 +1,8 @@
 import * as assert from 'assert'
 import * as mocha from 'mocha'
+import * as path from 'path'
+import * as fs from 'fs'
+import * as zlib from 'zlib'
 import * as AWS from 'aws-sdk'
 import * as common from '../../lib/common'
 import * as sender from '../../lib/sender'
@@ -40,15 +43,26 @@ before(async function () {
   // Create topc
   let createTopic = await sns.createTopic({ Name: TEST_SNS_TOPIC }).promise()
   topicArn = createTopic.TopicArn
+
   // Create queue
   let createQueue = await sqs.createQueue({ QueueName: TEST_SQS_QUEUE }).promise()
   queueUrl = createQueue.QueueUrl
   let parts = queueUrl.split('/')
   queueArn = ['arn', 'aws', 'sqs', REGION, parts[parts.length-2], parts[parts.length-1]].join(':')
+
   // Create subscription between SNS and SQS
   let subscribe = await sns.subscribe({ TopicArn: topicArn, Protocol: 'sqs', Endpoint: queueArn }).promise()
-  // let subs = await sns.listSubscriptions().promise()
-  // console.log(subs)
+
+  // Create Lambda function
+  await lambda.createFunction({
+    FunctionName: 'HelloFunction',
+    Handler: 'handler.hello',
+    Role: 'AWSLambdaBasicExecutionRole',
+    Runtime: 'python3.6',
+    Code: {
+      ZipFile: fs.readFileSync(path.join(__dirname, '../fixtures/handler.zip'))
+    }
+  }).promise()
 
   // TODO: test s3 notification configuration but Localstack S3 notification didn't work out
   // Revisit this if the issue is fixed in future.
@@ -70,6 +84,7 @@ describe('sender', function () {
     let message = receiveMessage.Messages[0]
     let messageBody = JSON.parse(message.Body)
     assert.equal(messageBody.Records[0].s3.object.key, jsonFileObject.Key)
+    assert.equal(messageBody.Records[0].eventName, 's3:ObjectCreated:*')
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
   it('should send SQS message with matched filter', async function () {
@@ -99,17 +114,29 @@ describe('sender', function () {
   it('should publish SNS notification', async function () {
     await sender.sendSNSNotification(sns, topicArn, {
       bucket: TEST_BUCKET,
-      eventName: 'ObjectCreated:*',
+      eventName: 'ObjectRemoved:*',
       object: jsonFileObject,
-      filterRules: [{ Name: 'Suffix', Value: 'json' }]
+      filterRules: [{ Name: 'prefix', Value: 'test-file' }]
     })
     let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
     assert(receiveMessage.Messages.length > 0)
     let message = receiveMessage.Messages[0]
     let snsMessage = JSON.parse(message.Body)
-    assert.equal(snsMessage.TopicArn, topicArn)
     let s3Message = JSON.parse(snsMessage.Message)
+    assert.equal(snsMessage.TopicArn, topicArn)
     assert.equal(s3Message.Records[0].s3.object.key, jsonFileObject.Key)
+    assert.equal(s3Message.Records[0].eventName, 's3:ObjectRemoved:*')
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
+  })
+  it('should invoke Lambda function', async function () {
+    let invocation = await sender.invokeLambda(lambda, 'HelloFunction', 'Event', {
+      bucket: TEST_BUCKET,
+      eventName: 'ObjectRemoved:*',
+      object: jsonFileObject,
+      filterRules: [{ Name: 'prefix', Value: 'test-file' }]
+    })
+    assert.equal(invocation.StatusCode, 200)
+    let payload = JSON.parse(invocation.Payload as string)
+    assert.equal(payload.Records[0].s3.object.key, 'test-file.json')
   })
 })
