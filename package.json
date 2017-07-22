@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc -p .",
     "pretest": "docker-compose up -d --force-recreate && sleep 3",
-    "test": "mocha tests/unit"
+    "test": "npm run build && mocha tests/unit"
   },
   "keywords": [],
   "author": "",

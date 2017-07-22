@@ -11,22 +11,24 @@ const REGION = 'us-east-1'
 const TEST_BUCKET = 's3events-test'
 const TEST_SNS_TOPIC = 'S3EventsSNSTopic'
 const TEST_SQS_QUEUE = 'S3EventsSQSQueue'
+
+AWS.config.update({
+  accessKeyId: 'foo',
+  secretAccessKey: 'bar',
+  region: REGION
+})
 const s3 = new AWS.S3({
-  region: REGION,
   endpoint: 'http://0.0.0.0:4572',
   s3ForcePathStyle: true
 })
 const lambda = new AWS.Lambda({
-  region: REGION,
   endpoint: 'http://0.0.0.0:4574'
 })
 const sns = new AWS.SNS({
-  region: REGION,
   apiVersion: '2010-03-31',
   endpoint: 'http://0.0.0.0:4575'
 })
 const sqs = new AWS.SQS({
-  region: REGION,
   endpoint: 'http://0.0.0.0:4576'
 })
 let topicArn:string
