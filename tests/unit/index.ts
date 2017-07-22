@@ -64,11 +64,23 @@ before(async function () {
     }
   }).promise()
 
-  // TODO: test s3 notification configuration but Localstack S3 notification didn't work out
-  // Revisit this if the issue is fixed in future.
-  // await s3.createBucket({ Bucket: TEST_BUCKET }).promise()
-  // await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.json', Body: '{ "json": true }' }).promise()
-  // await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.gz', Body: '{ "json": false }' }).promise()
+  await s3.createBucket({ Bucket: TEST_BUCKET }).promise()
+  await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.json', Body: '{ "json": true }' }).promise()
+  await s3.upload({ Bucket: TEST_BUCKET, Key: 'test-file.gz', Body: '{ "json": false }' }).promise()
+  // TODO: Test S3 notification configuration
+  // Not supported by localstack at the point of writing
+  // Posibbily revisit the test case in future
+})
+
+describe('forEachS3KeyInPrefix', function () {
+  it('should retrieve all s3 keys', async function () {
+    let keys = []
+    await common.forEachS3KeyInPrefix(s3, TEST_BUCKET, '/', async function (object) {
+      keys.push(object.Key)
+    })
+    assert(keys.includes('test-file.json'))
+    assert(keys.includes('test-file.gz'))
+  })
 })
 
 describe('sender', function () {
