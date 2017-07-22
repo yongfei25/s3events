@@ -11,10 +11,11 @@ export interface S3Path {
 }
 
 export interface S3KeyFunc {
-  (bucket:string, object:AWS.S3.Object):Promise<any>
+  (object:AWS.S3.Object):Promise<any>
 }
 
 export interface S3Event {
+  eventVersion:string
   eventName:string
   eventTime:string
   eventSource:string
@@ -67,30 +68,16 @@ export function getSNS ():AWS.SNS {
   })
 }
 
-export function shouldPublishEvent (object:AWS.S3.Object, filterRules:AWS.S3.FilterRule[]) {
-  let valid = true
-  filterRules.forEach((rule) => {
-    if (rule.Name === 'prefix') {
-      valid = object.Key.startsWith(rule.Value)
-    } else{
-      valid = object.Key.endsWith(rule.Value)
-    }
-    if (!valid) {
-      return false
-    }
-  })
-  return valid
-}
-
-export function constructS3Event (bucket:string, object:AWS.S3.Object):S3Event {
+export function constructS3Event (bucket:string, eventName:string, object:AWS.S3.Object):S3Event {
   return {
-    eventName: 'ObjectCreated:Put',
+    eventVersion: "2.0",
+    eventName: eventName,
     eventTime: (new Date()).toISOString(),
     eventSource: 'aws:s3',
     s3: {
       bucket: {
         name: bucket,
-        arn: ''
+        arn: `arn:aws:s3:::${bucket}`
       },
       object: {
         key: object.Key,
@@ -112,7 +99,7 @@ export async function forEachS3KeyInPrefix (s3:AWS.S3, bucket:string, prefix:str
       ContinuationToken: continuationToken === 'startToken'? undefined : continuationToken
     }).promise()
     let funcPromises = listResult.Contents.map((object) => {
-      return func(bucket, object)
+      return func(object)
     })
     await Promise.all(funcPromises)
     numObjects += funcPromises.length
