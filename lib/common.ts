@@ -5,6 +5,9 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as ini from 'ini'
 
+const chunk = require('lodash.chunk')
+const CHUNK_SIZE = 30
+
 export interface S3Path {
   bucket:string
   key:string
@@ -143,19 +146,19 @@ export async function forEachS3KeyInPrefix (s3:AWS.S3, bucket:string, prefix:str
   let numObjects = 0
   let continuationToken:string|null = 'startToken'
   while (continuationToken) {
-    let listResult = await s3.listObjectsV2({
+    const listResult = await s3.listObjectsV2({
       Bucket: bucket,
       Prefix: prefix.substr(1),
-      MaxKeys: 1000,
       ContinuationToken: continuationToken === 'startToken'? undefined : continuationToken
     }).promise()
-    let funcPromises = listResult.Contents.map((object) => {
-      return func(object)
-    })
-    await Promise.all(funcPromises)
-    numObjects += funcPromises.length
+    const batches = chunk(listResult.Contents, CHUNK_SIZE)
+    for (let i=0; i<batches.length; i++) {
+      const funcPromises = batches[i].map((object) => func(object))
+      await Promise.all(funcPromises)
+    }
+    numObjects += listResult.Contents.length
     if (listResult.IsTruncated) {
-      continuationToken = listResult.ContinuationToken
+      continuationToken = listResult.NextContinuationToken
     } else {
       continuationToken = null
     }

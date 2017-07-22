@@ -69,9 +69,9 @@ async function sendSqs (sqs, queueConfigs, event, bucket, object, dryrun) {
 async function invokeLambda (lambda, lambdaConfigs, event, bucket, object, dryrun) {
   if (lambdaConfigs.length > 0) {
     if (dryrun) {
-      console.log(`(dryun) Invoke Lambda function ${event} : ${object.Key}`)
+      console.log(`(dryun) Invoke Lambda functions with ${event} : ${object.Key}`)
     } else {
-      console.log(`Send ${event} SQS message: ${object.Key}`)
+      console.log(`Invoke Lambda functions with ${event} : ${object.Key}`)
       await sender.invokeLambdaWithConfigurations(lambda, {
         bucket: bucket,
         eventName: event,
