@@ -29,7 +29,7 @@ exports.handler = async function (argv) {
       await sendSqs(sqs, configuration.QueueConfigurations, argv.event, s3Path.bucket, object, argv.dryrun)
       await invokeLambda(lambda, configuration.LambdaFunctionConfigurations, argv.event, s3Path.bucket, object, argv.dryrun)
     })
-    console.log(`Completed for ${numObjects} objects.`)
+    console.log(`Done. Scanned ${numObjects} objects in prefix.`)
   } catch (err) {
     console.error(err)
   }

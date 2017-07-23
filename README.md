@@ -1,9 +1,38 @@
 # s3events
-Resend AWS S3 events to new or existing event handlers. Supports SNS, SQS, Lambda.
-
+[![npm version](https://badge.fury.io/js/s3events.svg)](https://badge.fury.io/js/s3events)
 [![Build Status](https://travis-ci.org/yongfei25/s3events.svg?branch=master)](https://travis-ci.org/yongfei25/s3events)
 
+`s3events` is a command line tool to simulate and send AWS S3 events to new or existing event handlers. Supports SNS, SQS, Lambda.
+
 ## Usage
+### Send object creation events in prefix to all attached event handlers
+```bash
+Usage: s3events notify-all <event> <s3Path>
+--event   Event type[required] [choices: "ObjectCreated:*", "ObjectRemoved:*",
+                                                "ReducedRedundancyLostObject"]
+--s3Path  Example: s3://prefi
+
+# Example
+s3events notify-all ObjectCreated:* s3://bucket-name/data/2017/07/01/18
+
+# Use dryrun to see actions without sending notification
+s3events notify-all ObjectCreated:* s3://bucket-name/data/2017/07/01/18 --dryrun
+```
+
+### Send object creation events in prefix to another SNS topic
+```bash
+Usage: s3events notify-sns <event> <topicArn> <s3Path>
+--event     Event type
+                    [required] [choices: "ObjectCreated:*", "ObjectRemoved:*",
+                                                "ReducedRedundancyLostObject"]
+--topicArn  SNS topic ARN
+--s3Path    Example: s3://prefix
+
+# Example
+s3events notify-sns ObjectCreated:* arn:aws:sns:us-east-1:123456789:SNSTopicName s3://bucket-name/data/2017/07/01/18 --suffix sales.gz
+```
+
+## Usage Overview
 ```bash
 $ s3events --help
 Commands:
@@ -29,4 +58,8 @@ Options:
 yarn
 npm link --local
 s3events --help
+
+# Running tests
+export TMPDIR=/private$TMPDIR # OSX only
+npm test
 ```

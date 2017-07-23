@@ -36,7 +36,7 @@ exports.handler = async function (argv) {
         console.log(argv.dryrun? '(dryrun)' : '', `SQS: "${result.input.object.Key}" -> "${result.target}"`)
       }
     })
-    console.log(`Completed for ${numObjects} objects.`)
+    console.log(`Done. Scanned ${numObjects} objects in prefix.`)
   } catch (err) {
     console.error(err)
   }
