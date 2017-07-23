@@ -18,10 +18,12 @@ AWS.config.update({
   region: REGION
 })
 const s3 = new AWS.S3({
+  apiVersion: '2006-03-01',
   endpoint: 'http://0.0.0.0:4572',
   s3ForcePathStyle: true
 })
 const lambda = new AWS.Lambda({
+  apiVersion: '2015-03-31',
   endpoint: 'http://0.0.0.0:4574'
 })
 const sns = new AWS.SNS({
@@ -29,6 +31,7 @@ const sns = new AWS.SNS({
   endpoint: 'http://0.0.0.0:4575'
 })
 const sqs = new AWS.SQS({
+  apiVersion: '2012-11-05',
   endpoint: 'http://0.0.0.0:4576'
 })
 let topicArn:string
