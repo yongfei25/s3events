@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "postinstall": "npm run build",
+    "preinstall": "npm run build",
     "pretest": "docker-compose up -d --force-recreate && sleep 3",
     "test": "npm run build && mocha tests/unit"
   },
