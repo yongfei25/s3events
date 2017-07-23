@@ -63,12 +63,12 @@ export async function sendSNSWithTopicConfigurations (sns:AWS.SNS, param:SendSNS
 }
 
 export async function sendSNSNotification (sns:AWS.SNS, topicArn:string, param:SendEventParam):Promise<SendEventResult> {
-  let result = { input: param, target: topicArn, sent: false }
+  let result = { input: param, target: topicArn, sent: false, awsResponse: null }
   if (shouldSendEvent(param.object, param.filterRules)) {
     if (!param.dryrun) {
       const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
       const messageBody = constructMessageBody(s3Event)
-      await sns.publish({
+      result.awsResponse = await sns.publish({
         Subject: 'Amazon S3 Notification',
         TopicArn: topicArn,
         Message: messageBody
@@ -93,16 +93,18 @@ export async function sendSQSWithQueueConfigurations (sqs:AWS.SQS, param:SendSQS
 }
 
 export async function sendSQSMessage (sqs:AWS.SQS, queueArn:string, param:SendEventParam):Promise<SendEventResult> {
-  let result = { input: param, target: queueArn, sent: false }
+  let result = { input: param, target: queueArn, sent: false, awsResponse: null }
   if (shouldSendEvent(param.object, param.filterRules)) {
-    const queueName = queueArn.split(':').pop()
-    const queueUrlResult = await sqs.getQueueUrl({ QueueName: queueName }).promise()
-    const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
-    const messageBody = constructMessageBody(s3Event)
-    await sqs.sendMessage({
-      QueueUrl: queueUrlResult.QueueUrl,
-      MessageBody: messageBody
-    }).promise()
+    if (!param.dryrun) {
+      const queueName = queueArn.split(':').pop()
+      const queueUrlResult = await sqs.getQueueUrl({ QueueName: queueName }).promise()
+      const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
+      const messageBody = constructMessageBody(s3Event)
+      result.awsResponse = await sqs.sendMessage({
+        QueueUrl: queueUrlResult.QueueUrl,
+        MessageBody: messageBody
+      }).promise()
+    }
     result.sent = true
     return result
   }
@@ -124,13 +126,15 @@ export async function invokeLambdaWithConfigurations (lambda:AWS.Lambda, param:I
 export async function invokeLambda (lambda:AWS.Lambda, functionArn:string, type:string, param:SendEventParam):Promise<SendEventResult> {
   let result = { input: param, target: functionArn, sent: false, awsResponse: null }
   if (shouldSendEvent(param.object, param.filterRules)) {
-    const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
-    const messageBody = constructMessageBody(s3Event)
-    result.awsResponse = await lambda.invoke({
-      FunctionName: functionArn,
-      InvocationType: type,
-      Payload: messageBody
-    }).promise()
+    if (!param.dryrun) {
+      const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
+      const messageBody = constructMessageBody(s3Event)
+      result.awsResponse = await lambda.invoke({
+        FunctionName: functionArn,
+        InvocationType: type,
+        Payload: messageBody
+      }).promise()
+    }
     result.sent = true
     return result
   }

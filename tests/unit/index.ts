@@ -125,6 +125,17 @@ describe('sender', function () {
     let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
     assert.equal(receiveMessage.Messages, undefined)
   })
+  it('should not send SQS message with dryrun option', async function () {
+    await sender.sendSQSMessage(sqs, queueArn, {
+      bucket: TEST_BUCKET,
+      eventName: 'ObjectCreated:*',
+      object: gzFileObject,
+      filterRules: [{ Name: 'Suffix', Value: 'gz' }],
+      dryrun: true
+    })
+    let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
+    assert.equal(receiveMessage.Messages, undefined)
+  })
   it('should publish SNS notification', async function () {
     await sender.sendSNSNotification(sns, topicArn, {
       bucket: TEST_BUCKET,
@@ -142,6 +153,17 @@ describe('sender', function () {
     assert.equal(s3Message.Records[0].eventName, 's3:ObjectRemoved:*')
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
+  it('should not publish SNS notification with dryrun option', async function () {
+    await sender.sendSNSNotification(sns, topicArn, {
+      bucket: TEST_BUCKET,
+      eventName: 'ObjectRemoved:*',
+      object: jsonFileObject,
+      filterRules: [{ Name: 'prefix', Value: 'test-file' }],
+      dryrun: true
+    })
+    let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
+    assert.equal(receiveMessage.Messages, undefined)
+  })
   it('should invoke Lambda function', async function () {
     let result = await sender.invokeLambda(lambda, 'HelloFunction', 'Event', {
       bucket: TEST_BUCKET,
@@ -153,5 +175,15 @@ describe('sender', function () {
     let payload = JSON.parse(invocation.Payload as string)
     assert.equal(invocation.StatusCode, 200)
     assert.equal(payload.Records[0].s3.object.key, 'test-file.json')
+  })
+  it('should not invoke Lambda function with dryrun option', async function () {
+    let result = await sender.invokeLambda(lambda, 'HelloFunction', 'Event', {
+      bucket: TEST_BUCKET,
+      eventName: 'ObjectRemoved:*',
+      object: jsonFileObject,
+      filterRules: [{ Name: 'prefix', Value: 'test-file' }],
+      dryrun: true
+    })
+    assert.equal(result.awsResponse, null)
   })
 })
