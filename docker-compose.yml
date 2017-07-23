@@ -2,7 +2,7 @@ version: '2.1'
 
 services:
   localstack:
-    image: atlassianlabs/localstack
+    image: localstack/localstack
     ports:
       - "4572-4576:4572-4576"
     environment:
