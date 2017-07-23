@@ -27,3 +27,6 @@ before_install:
   # one we specified). This is not to be confused with the version we printed
   # before doing the update.
   - docker-compose --version
+
+notifications:
+  email: false
