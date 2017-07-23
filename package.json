@@ -1,6 +1,6 @@
 {
   "name": "s3events",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Command line tool to resend AWS S3 events to new or existing event handlers",
   "main": "index.js",
   "bin": {
@@ -18,7 +18,12 @@
     "url": "git+https://github.com/yongfei25/s3events.git"
   },
   "homepage": "https://github.com/yongfei25/s3events",
-  "keywords": ["aws", "s3", "events", "cli"],
+  "keywords": [
+    "aws",
+    "s3",
+    "events",
+    "cli"
+  ],
   "author": "Yong Fei <yongfei25@outlook.com>",
   "bugs": "https://github.com/yongfei25/s3events/issues",
   "license": "MIT",
