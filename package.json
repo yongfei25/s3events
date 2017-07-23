@@ -7,10 +7,11 @@
     "s3events": "bin/s3events.js"
   },
   "scripts": {
-    "build": "tsc -p . && chmod +x bin/s3events.js",
+    "build": "./node_modules/typescript/bin/tsc -p . && chmod +x bin/s3events.js",
     "prepublish": "npm run build",
     "pretest": "docker-compose up -d --force-recreate && sleep 3",
-    "test": "npm run build && mocha tests/unit"
+    "test": "npm run build && ./node_modules/mocha/bin/mocha tests/unit",
+    "posttest": "docker-compose down"
   },
   "repository": {
     "type": "git",
