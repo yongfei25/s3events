@@ -1,6 +1,6 @@
 {
   "name": "s3events",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Command line tool to resend AWS S3 events to new or existing event handlers",
   "main": "index.js",
   "bin": {
