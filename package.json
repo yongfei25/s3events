@@ -1,16 +1,20 @@
 {
   "name": "s3events",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Command line tool to resend AWS S3 events to new or existing event handlers",
   "main": "index.js",
   "bin": {
     "s3events": "bin/s3events.js"
   },
   "scripts": {
-    "build": "tsc -p .",
-    "preinstall": "npm run build",
+    "build": "tsc -p . && chmod +x bin/s3events.js",
+    "prepublish": "npm run build",
     "pretest": "docker-compose up -d --force-recreate && sleep 3",
     "test": "npm run build && mocha tests/unit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yongfei25/s3events.git"
   },
   "homepage": "https://github.com/yongfei25/s3events",
   "keywords": ["aws", "s3", "events", "cli"],
