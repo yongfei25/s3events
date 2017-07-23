@@ -102,7 +102,7 @@ describe('sender', function () {
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
   it('should send SQS message with matched filter', async function () {
-    await sender.sendSQSMessage(sqs, queueArn, {
+    let result = await sender.sendSQSMessage(sqs, queueArn, {
       bucket: TEST_BUCKET,
       eventName: 'ObjectCreated:*',
       object: jsonFileObject,
@@ -112,17 +112,19 @@ describe('sender', function () {
     assert(receiveMessage.Messages.length > 0)
     let message = receiveMessage.Messages[0]
     let messageBody = JSON.parse(message.Body)
+    assert.equal(result.sent, true)
     assert.equal(messageBody.Records[0].s3.object.key, jsonFileObject.Key)
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
   it('should not send SQS message with unmatched filter', async function () {
-    await sender.sendSQSMessage(sqs, queueArn, {
+    let result = await sender.sendSQSMessage(sqs, queueArn, {
       bucket: TEST_BUCKET,
       eventName: 'ObjectCreated:*',
       object: jsonFileObject,
       filterRules: [{ Name: 'Suffix', Value: 'gz' }]
     })
     let receiveMessage = await sqs.receiveMessage({ QueueUrl: queueUrl }).promise()
+    assert.equal(result.sent, false)
     assert.equal(receiveMessage.Messages, undefined)
   })
   it('should not send SQS message with dryrun option', async function () {

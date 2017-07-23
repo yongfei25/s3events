@@ -20,21 +20,20 @@ exports.handler = async function (argv) {
     const s3Path = common.parseS3Path(argv.s3Path)
     const s3 = common.getS3()
     const lambda = common.getLambda()
-    const numObjects = await common.forEachS3KeyInPrefix(s3, s3Path.bucket, s3Path.key, async function (object:AWS.S3.Object) {
-      let filterRules = []
-      if (argv.suffix) {
-        filterRules.push({ Name: 'Suffix', Value: argv.suffix })
-      }
-      if (argv.dryrun) {
-        console.log(`(dryrun) Invoke ${argv.functionArn} ${argv.event} for ${object.Key}`)
-      } else {
-        console.log(`Invoke ${argv.functionArn} ${argv.event} for ${object.Key}`)
-        await sender.invokeLambda(lambda, argv.functionArn, 'Event', {
-          bucket: s3Path.bucket,
-          eventName: argv.event,
-          object: object,
-          filterRules: filterRules
-        })
+    let filterRules = []
+    if (argv.suffix) {
+      filterRules.push({ Name: 'Suffix', Value: argv.suffix })
+    }
+    const numObjects = await common.forEachS3KeyInPrefix(s3, s3Path.bucket, s3Path.key, async function (object:AWS.S3.Object) {  
+      let result = await sender.invokeLambda(lambda, argv.functionArn, 'Event', {
+        bucket: s3Path.bucket,
+        eventName: argv.event,
+        object: object,
+        filterRules: filterRules,
+        dryrun: argv.dryrun
+      })
+      if (result.sent) {
+        console.log(argv.dryrun? '(dryrun)' : '', `Lambda: "${result.input.object.Key}" -> "${result.target}"`)
       }
     })
     console.log(`Completed for ${numObjects} objects.`)
