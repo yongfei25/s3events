@@ -143,14 +143,15 @@ describe('sender', function () {
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
   it('should invoke Lambda function', async function () {
-    let invocation = await sender.invokeLambda(lambda, 'HelloFunction', 'Event', {
+    let result = await sender.invokeLambda(lambda, 'HelloFunction', 'Event', {
       bucket: TEST_BUCKET,
       eventName: 'ObjectRemoved:*',
       object: jsonFileObject,
       filterRules: [{ Name: 'prefix', Value: 'test-file' }]
     })
-    assert.equal(invocation.StatusCode, 200)
+    let invocation:AWS.Lambda.InvocationResponse = result.awsResponse
     let payload = JSON.parse(invocation.Payload as string)
+    assert.equal(invocation.StatusCode, 200)
     assert.equal(payload.Records[0].s3.object.key, 'test-file.json')
   })
 })

@@ -21,6 +21,7 @@ exports.handler = async function (argv) {
     const sqs = common.getSQS()
     const lambda = common.getLambda()
     const configuration = await s3.getBucketNotificationConfiguration({ Bucket: s3Path.bucket }).promise() 
+    console.log(`Sending ${argv.event} event with the following configurations:\n`)
     common.printNotificationConfig(configuration)
     console.log('')
     const numObjects = await common.forEachS3KeyInPrefix(s3, s3Path.bucket, s3Path.key, async function (object:AWS.S3.Object) {
@@ -36,48 +37,51 @@ exports.handler = async function (argv) {
 
 async function sendSns (sns, topicConfigs, event, bucket, object, dryrun) {
   if (topicConfigs.length > 0) {
-    if (dryrun) {
-      console.log(`(dryun) Send ${event} SNS: ${object.Key}`)
-    } else {
-      console.log(`Send ${event} SNS: ${object.Key}`)
-      await sender.sendSNSWithTopicConfigurations(sns, {
-        bucket: bucket,
-        eventName: event,
-        object: object,
-        topicConfigs: topicConfigs
-      })
-    }
+    const results = await sender.sendSNSWithTopicConfigurations(sns, {
+      bucket: bucket,
+      eventName: event,
+      object: object,
+      topicConfigs: topicConfigs,
+      dryrun: dryrun
+    })
+    results.forEach((result) => {
+      if (result.sent) {
+        console.log(dryrun? '(dryrun)' : '', `SNS: "${result.input.object.Key}" -> "${result.target}"`)
+      }
+    })
   }
 }
 
 async function sendSqs (sqs, queueConfigs, event, bucket, object, dryrun) {
   if (queueConfigs.length > 0) {
-    if (dryrun) {
-      console.log(`(dryun) Send ${event} SQS message: ${object.Key}`)
-    } else {
-      console.log(`Send ${event} SQS message: ${object.Key}`)
-      await sender.sendSQSWithQueueConfigurations(sqs, {
-        bucket: bucket,
-        eventName: event,
-        object: object,
-        queueConfigs: queueConfigs
-      })
-    }
+    const results = await sender.sendSQSWithQueueConfigurations(sqs, {
+      bucket: bucket,
+      eventName: event,
+      object: object,
+      queueConfigs: queueConfigs,
+      dryrun: dryrun
+    })
+    results.forEach((result) => {
+      if (result.sent) {
+        console.log(dryrun? '(dryrun)' : '', `SQS: "${result.input.object.Key}" -> "${result.target}"`)
+      }
+    })
   }
 }
 
 async function invokeLambda (lambda, lambdaConfigs, event, bucket, object, dryrun) {
   if (lambdaConfigs.length > 0) {
-    if (dryrun) {
-      console.log(`(dryun) Invoke Lambda functions with ${event} : ${object.Key}`)
-    } else {
-      console.log(`Invoke Lambda functions with ${event} : ${object.Key}`)
-      await sender.invokeLambdaWithConfigurations(lambda, {
-        bucket: bucket,
-        eventName: event,
-        object: object,
-        lambdaConfigs: lambdaConfigs
-      })
-    }
+    const results = await sender.invokeLambdaWithConfigurations(lambda, {
+      bucket: bucket,
+      eventName: event,
+      object: object,
+      lambdaConfigs: lambdaConfigs,
+      dryrun: dryrun
+    })
+    results.forEach((result) => {
+      if (result.sent) {
+        console.log(dryrun? '(dryrun)' : '', `Lambda: "${result.input.object.Key}" -> "${result.target}"`)
+      }
+    })
   }
 }
