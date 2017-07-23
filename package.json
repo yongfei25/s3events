@@ -1,7 +1,7 @@
 {
   "name": "s3events",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Command line tool to resend AWS S3 events to new or existing event handlers",
   "main": "index.js",
   "bin": {
     "s3events": "bin/s3events.js"
@@ -12,9 +12,11 @@
     "pretest": "docker-compose up -d --force-recreate && sleep 3",
     "test": "npm run build && mocha tests/unit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "homepage": "https://github.com/yongfei25/s3events",
+  "keywords": ["aws", "s3", "events", "cli"],
+  "author": "Yong Fei <yongfei25@outlook.com>",
+  "bugs": "https://github.com/yongfei25/s3events/issues",
+  "license": "MIT",
   "devDependencies": {
     "@types/aws-lambda": "^0.0.15",
     "@types/ini": "^1.3.29",
