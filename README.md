@@ -8,6 +8,11 @@
 - Resend s3 object created events to event handlers.
 - Simulate object removal events without deleting objects.
 
+## Installation
+```bash
+npm install -g s3event
+```
+
 ### Send object creation events in prefix to all attached event handlers
 ```bash
 Usage: s3events notify-all <event> <s3Path>
