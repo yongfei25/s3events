@@ -52,11 +52,11 @@ s3events notify-sns ObjectCreated:* arn:aws:sns:us-east-1:123456789:SNSTopicName
     "s3": {
       "s3SchemaVersion":"1.0",
       "bucket": {
-        "name": "iflix-development-player-events-enriched",
-        "arn": "arn:aws:s3:::iflix-development-player-events-enriched"
+        "name": "bucket-name",
+        "arn": "arn:aws:s3:::bucket-name"
       },
       "object": {
-        "key": "2017/10/01/01/downloadEvents.gz",
+        "key": "path/to/the/object.json",
         "size": 1487143,
         "etag": "\"bb72de632950eaf6d9ac9c828e3bbd1c\""
       }
