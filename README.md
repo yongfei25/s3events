@@ -10,7 +10,7 @@
 
 ## Installation
 ```bash
-npm install -g s3event
+npm install -g s3events
 ```
 
 ### Send object creation events in prefix to all attached event handlers
