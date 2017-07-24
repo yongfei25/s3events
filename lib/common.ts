@@ -23,6 +23,7 @@ export interface S3Event {
   eventTime:string
   eventSource:string
   s3:{
+    s3SchemaVersion:string
     bucket:{
       name:string
       arn:string
@@ -97,6 +98,7 @@ export function constructS3Event (bucket:string, eventName:string, object:AWS.S3
     eventTime: (new Date()).toISOString(),
     eventSource: 'aws:s3',
     s3: {
+      s3SchemaVersion: '1.0',
       bucket: {
         name: bucket,
         arn: `arn:aws:s3:::${bucket}`
@@ -148,7 +150,7 @@ export async function forEachS3KeyInPrefix (s3:AWS.S3, bucket:string, prefix:str
   while (continuationToken) {
     const listResult = await s3.listObjectsV2({
       Bucket: bucket,
-      Prefix: prefix.substr(1),
+      Prefix: prefix? prefix.substr(1) : '',
       ContinuationToken: continuationToken === 'startToken'? undefined : continuationToken
     }).promise()
     const batches = chunk(listResult.Contents, CHUNK_SIZE)

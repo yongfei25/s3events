@@ -35,7 +35,34 @@ Usage: s3events notify-sns <event> <topicArn> <s3Path>
 --s3Path    Example: s3://prefix
 
 # Example
-s3events notify-sns ObjectCreated:* arn:aws:sns:us-east-1:123456789:SNSTopicName s3://bucket-name/data/2017/07/01/18 --suffix sales.gz
+# Use --suffix flag to selectively send objects
+s3events notify-sns ObjectCreated:* arn:aws:sns:us-east-1:123456789:SNSTopicName s3://bucket-name/data/2017/07/01/18 --suffix .gz
+```
+
+### Sample S3 event
+- Not all the fields of the official S3 event are sent, for example: `awsRegion`, `userIdentity`, `requestParameters`, etc are not sent.
+- Only the following fields are sent.
+```json
+{
+  "Records": [{
+    "eventVersion": "2.0",
+    "eventName": "s3:ObjectCreated:*",
+    "eventTime": "2017-07-24T11:13:52.418Z",
+    "eventSource": "aws:s3",
+    "s3": {
+      "s3SchemaVersion":"1.0",
+      "bucket": {
+        "name": "iflix-development-player-events-enriched",
+        "arn": "arn:aws:s3:::iflix-development-player-events-enriched"
+      },
+      "object": {
+        "key": "2017/10/01/01/downloadEvents.gz",
+        "size": 1487143,
+        "etag": "\"bb72de632950eaf6d9ac9c828e3bbd1c\""
+      }
+    }
+  }]
+}
 ```
 
 ## Usage Overview
