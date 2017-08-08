@@ -3,13 +3,14 @@ import * as yargs from 'yargs'
 import * as common from '../lib/common'
 import * as sender from '../lib/sender'
 
-exports.command = 'notify-sns <event> <topicArn> <s3Path>'
+exports.command = 'notify-sns <event> <target> <destination> <s3Path>'
 exports.desc = 'Send event for each object in the path, to a SNS topic.'
 exports.builder = function (yargs:yargs.Argv) {
   yargs.demand(['event'])
     .choices('event', ['ObjectCreated:*', 'ObjectRemoved:*', 'ReducedRedundancyLostObject'])
+    .choices('target', ['topicArn', 'targetArn', 'phoneNum'])
     .describe('event', 'Event type')
-    .describe('topicArn', 'SNS topic ARN')
+    .describe('destination', 'topic ARN / target ARN / phone number')
     .describe('s3Path', 'Example: s3://prefix')
     .describe('suffix', 'S3 key suffix')
     .describe('dryrun', 'Do not send event')
@@ -25,7 +26,7 @@ exports.handler = async function (argv) {
       filterRules.push({ Name: 'Suffix', Value: argv.suffix })
     }
     const numObjects = await common.forEachS3KeyInPrefix(s3, s3Path.bucket, s3Path.key, async function (object:AWS.S3.Object) {
-      let result = await sender.sendSNSNotification(sns, argv.topicArn, {
+      let result = await sender.sendSNSNotification(sns, argv.target, argv.destination, {
         bucket: s3Path.bucket,
         eventName: argv.event,
         object: object,

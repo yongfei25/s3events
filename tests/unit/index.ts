@@ -142,7 +142,7 @@ describe('sender', function () {
     assert.equal(receiveMessage.Messages, undefined)
   })
   it('should publish SNS notification', async function () {
-    await sender.sendSNSNotification(sns, topicArn, {
+    await sender.sendSNSNotification(sns, 'topicArn', topicArn, {
       bucket: TEST_BUCKET,
       eventName: 'ObjectRemoved:*',
       object: jsonFileObject,
@@ -159,7 +159,7 @@ describe('sender', function () {
     await sqs.deleteMessage({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }).promise()
   })
   it('should not publish SNS notification with dryrun option', async function () {
-    await sender.sendSNSNotification(sns, topicArn, {
+    await sender.sendSNSNotification(sns, 'topicArn',topicArn, {
       bucket: TEST_BUCKET,
       eventName: 'ObjectRemoved:*',
       object: jsonFileObject,
