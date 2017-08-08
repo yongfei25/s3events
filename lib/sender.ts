@@ -51,7 +51,7 @@ export function constructMessageBody (s3Event:common.S3Event) {
 
 export async function sendSNSWithTopicConfigurations (sns:AWS.SNS, param:SendSNSWithTopicConfigurationsParam):Promise<SendEventResult[]> {
   let promises = param.topicConfigs.map((topicConfig) => {
-    return sendSNSNotification(sns, topicConfig.TopicArn, {
+    return sendSNSNotification(sns, 'topicArn', topicConfig.TopicArn, {
       bucket: param.bucket,
       eventName: param.eventName,
       object: param.object,
@@ -62,17 +62,35 @@ export async function sendSNSWithTopicConfigurations (sns:AWS.SNS, param:SendSNS
   return await Promise.all(promises)
 }
 
-export async function sendSNSNotification (sns:AWS.SNS, topicArn:string, param:SendEventParam):Promise<SendEventResult> {
-  let result = { input: param, target: topicArn, sent: false, awsResponse: null }
+export async function sendSNSNotification (sns:AWS.SNS, target:string, destination:string, param:SendEventParam):Promise<SendEventResult> {
+  let result = { input: param, target: destination, sent: false, awsResponse: null }
   if (shouldSendEvent(param.object, param.filterRules)) {
     if (!param.dryrun) {
       const s3Event = common.constructS3Event(param.bucket, param.eventName, param.object)
       const messageBody = constructMessageBody(s3Event)
-      result.awsResponse = await sns.publish({
-        Subject: 'Amazon S3 Notification',
-        TopicArn: topicArn,
-        Message: messageBody
-      }).promise()
+      switch (target) {
+        case 'topicArn':
+          result.awsResponse = await sns.publish({
+            Subject: 'Amazon S3 Notification',
+            TopicArn: destination,
+            Message: messageBody
+          }).promise()
+          break;
+        case 'targetArn':
+          result.awsResponse = await sns.publish({
+            Subject: 'Amazon S3 Notification',
+            TargetArn: destination,
+            Message: messageBody
+          }).promise()
+          break;
+        case 'phoneNum':
+          result.awsResponse = await sns.publish({
+            Subject: 'Amazon S3 Notification',
+            PhoneNumber: destination,
+            Message: messageBody
+          }).promise()
+          break;
+      }
     }
     result.sent = true
     return result
